@@ -1,0 +1,41 @@
+{
+  "name": "DRECS - Cứu Hộ Khẩn Cấp",
+  "short_name": "Cứu Hộ",
+  "description": "Hệ thống cứu hộ khẩn cấp qua drone",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#DC2626",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "vi",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "emergency"],
+  "shortcuts": [
+    {
+      "name": "Gửi yêu cầu khẩn cấp",
+      "short_name": "Khẩn cấp",
+      "description": "Gửi yêu cầu cứu hộ ngay lập tức",
+      "url": "/index.html?action=panic",
+      "icons": [
+        {
+          "src": "assets/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

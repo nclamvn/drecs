@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#DC2626"/>
+      <stop offset="100%" style="stop-color:#991B1B"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="192" height="192" rx="32" fill="url(#bg)"/>
+  
+  <!-- SOS Text -->
+  <text x="96" y="85" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="white" text-anchor="middle">SOS</text>
+  
+  <!-- Wave lines -->
+  <path d="M30 120 Q50 110, 70 120 T110 120 T150 120 T190 120" stroke="white" stroke-width="4" fill="none" opacity="0.6"/>
+  <path d="M0 135 Q30 125, 60 135 T120 135 T180 135" stroke="white" stroke-width="4" fill="none" opacity="0.4"/>
+  <path d="M10 150 Q40 140, 70 150 T130 150 T192 150" stroke="white" stroke-width="4" fill="none" opacity="0.3"/>
+  
+  <!-- Location pin -->
+  <circle cx="96" cy="160" r="6" fill="white"/>
+</svg>

@@ -1,0 +1,64 @@
+# ═══════════════════════════════════════════════════════════════
+#                    DRECS - Docker Compose
+#                   PostgreSQL + PostGIS
+# ═══════════════════════════════════════════════════════════════
+
+version: '3.8'
+
+services:
+  # PostgreSQL with PostGIS
+  postgres:
+    image: postgres:15-alpine
+    container_name: drecs-postgres
+    platform: linux/arm64
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: drecs
+      POSTGRES_PASSWORD: drecs_password
+      POSTGRES_DB: drecs_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U drecs -d drecs_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Adminer - Database management UI (optional)
+  adminer:
+    image: adminer:4
+    container_name: drecs-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+
+# ═══════════════════════════════════════════════════════════════
+# USAGE:
+#
+# Start database:
+#   docker-compose up -d
+#
+# View logs:
+#   docker-compose logs -f postgres
+#
+# Stop:
+#   docker-compose down
+#
+# Reset data:
+#   docker-compose down -v
+#
+# Access Adminer:
+#   http://localhost:8080
+#   System: PostgreSQL
+#   Server: postgres
+#   Username: drecs
+#   Password: drecs_password
+#   Database: drecs_db
+# ═══════════════════════════════════════════════════════════════

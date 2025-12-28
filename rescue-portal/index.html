@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#DC2626">
+    <meta name="description" content="DRECS - Hệ thống cứu hộ khẩn cấp">
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
+    
+    <title>CỨU HỘ KHẨN CẤP</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        danger: '#DC2626',
+                        primary: '#2563EB',
+                        success: '#16A34A',
+                        warning: '#F59E0B'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- SCREEN 1: MAIN FORM                                          -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="screen-main" class="screen active">
+        <div class="min-h-screen flex flex-col p-4 max-w-lg mx-auto">
+            
+            <!-- Header -->
+            <header class="text-center py-2">
+                <h1 class="text-2xl font-bold text-gray-800">🆘 CỨU HỘ KHẨN CẤP</h1>
+                <p class="text-sm text-gray-600 mt-1" id="connection-status">
+                    <span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>
+                    Đã kết nối
+                </p>
+            </header>
+            
+            <!-- PANIC BUTTON -->
+            <section class="flex-shrink-0 my-4">
+                <button 
+                    id="btn-panic" 
+                    class="panic-button w-full bg-danger hover:bg-red-700 text-white font-bold text-2xl py-16 rounded-2xl shadow-lg transform transition-all active:scale-95"
+                    onclick="handlePanic()"
+                >
+                    <div class="flex flex-col items-center">
+                        <span class="text-5xl mb-2">🚨</span>
+                        <span>CẦN CỨU NGAY</span>
+                        <span class="text-sm font-normal mt-2 opacity-80">Nhấn nếu rất khẩn cấp</span>
+                    </div>
+                </button>
+            </section>
+            
+            <!-- Divider -->
+            <div class="flex items-center my-4">
+                <div class="flex-1 border-t border-gray-300"></div>
+                <span class="px-4 text-gray-500 text-sm">HOẶC ĐIỀN THÔNG TIN</span>
+                <div class="flex-1 border-t border-gray-300"></div>
+            </div>
+            
+            <!-- RESCUE FORM -->
+            <form id="rescue-form" class="space-y-4 flex-1" onsubmit="handleSubmit(event)">
+                
+                <!-- GPS Location -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="text-xl mr-2">📍</span> Vị trí của bạn
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <input 
+                            type="text" 
+                            id="input-location" 
+                            class="form-input flex-1" 
+                            placeholder="Đang lấy vị trí..."
+                            readonly
+                        >
+                        <button 
+                            type="button" 
+                            id="btn-gps" 
+                            class="btn-secondary px-4 py-3"
+                            onclick="refreshGPS()"
+                        >
+                            🔄
+                        </button>
+                    </div>
+                    <input type="hidden" id="input-lat" name="lat">
+                    <input type="hidden" id="input-lng" name="lng">
+                    <p id="gps-error" class="text-red-500 text-sm mt-1 hidden"></p>
+                </div>
+                
+                <!-- Number of People -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="text-xl mr-2">👥</span> Số người cần cứu
+                    </label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button type="button" class="select-btn" data-field="people" data-value="1">1</button>
+                        <button type="button" class="select-btn" data-field="people" data-value="3">2-5</button>
+                        <button type="button" class="select-btn" data-field="people" data-value="8">6-10</button>
+                        <button type="button" class="select-btn" data-field="people" data-value="15">&gt;10</button>
+                    </div>
+                    <input type="hidden" id="input-people" name="people" required>
+                </div>
+                
+                <!-- Urgency Level -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="text-xl mr-2">🚨</span> Mức độ khẩn cấp
+                    </label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" class="select-btn" data-field="urgency" data-value="1">
+                            <span class="block text-green-600">🟢</span>
+                            <span class="text-xs">Thấp</span>
+                        </button>
+                        <button type="button" class="select-btn" data-field="urgency" data-value="2">
+                            <span class="block text-yellow-500">🟡</span>
+                            <span class="text-xs">Trung bình</span>
+                        </button>
+                        <button type="button" class="select-btn selected" data-field="urgency" data-value="3">
+                            <span class="block text-red-600">🔴</span>
+                            <span class="text-xs">Khẩn cấp</span>
+                        </button>
+                    </div>
+                    <input type="hidden" id="input-urgency" name="urgency" value="3">
+                </div>
+                
+                <!-- Injured -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="text-xl mr-2">🩺</span> Có người bị thương?
+                    </label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" class="select-btn" data-field="injured" data-value="true">
+                            <span class="text-red-600 font-bold">CÓ</span>
+                        </button>
+                        <button type="button" class="select-btn selected" data-field="injured" data-value="false">
+                            <span class="text-green-600 font-bold">KHÔNG</span>
+                        </button>
+                    </div>
+                    <input type="hidden" id="input-injured" name="injured" value="false">
+                </div>
+                
+                <!-- Water Level -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="text-xl mr-2">🌊</span> Mực nước hiện tại
+                    </label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button type="button" class="select-btn" data-field="water_level" data-value="<0.5m">
+                            <span class="block text-lg">🦶</span>
+                            <span class="text-xs">&lt;0.5m</span>
+                        </button>
+                        <button type="button" class="select-btn" data-field="water_level" data-value="0.5-1m">
+                            <span class="block text-lg">🦵</span>
+                            <span class="text-xs">0.5-1m</span>
+                        </button>
+                        <button type="button" class="select-btn" data-field="water_level" data-value="1-2m">
+                            <span class="block text-lg">🧍</span>
+                            <span class="text-xs">1-2m</span>
+                        </button>
+                        <button type="button" class="select-btn" data-field="water_level" data-value=">2m">
+                            <span class="block text-lg">🏊</span>
+                            <span class="text-xs">&gt;2m</span>
+                        </button>
+                    </div>
+                    <input type="hidden" id="input-water_level" name="water_level">
+                </div>
+                
+                <!-- Food Available -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="text-xl mr-2">🍚</span> Còn lương thực?
+                    </label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" class="select-btn selected" data-field="food_available" data-value="true">
+                            <span class="text-green-600 font-bold">CÒN</span>
+                        </button>
+                        <button type="button" class="select-btn" data-field="food_available" data-value="false">
+                            <span class="text-red-600 font-bold">HẾT</span>
+                        </button>
+                    </div>
+                    <input type="hidden" id="input-food_available" name="food_available" value="true">
+                </div>
+                
+                <!-- Phone Number (Optional) -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="text-xl mr-2">📞</span> Số điện thoại <span class="text-gray-400 text-sm">(tùy chọn)</span>
+                    </label>
+                    <input 
+                        type="tel" 
+                        id="input-phone" 
+                        name="phone"
+                        class="form-input" 
+                        placeholder="VD: 0901234567"
+                        pattern="[0-9]{10,11}"
+                    >
+                </div>
+                
+                <!-- Submit Button -->
+                <button 
+                    type="submit" 
+                    id="btn-submit"
+                    class="w-full bg-primary hover:bg-blue-700 text-white font-bold text-lg py-4 rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    GỬI YÊU CẦU CỨU HỘ
+                </button>
+                
+            </form>
+            
+            <!-- Footer -->
+            <footer class="text-center py-4 text-xs text-gray-400">
+                DRECS v1.0 • Hệ thống cứu hộ khẩn cấp
+            </footer>
+            
+        </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- SCREEN 2: CONFIRMATION                                       -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="screen-confirm" class="screen">
+        <div class="min-h-screen flex flex-col p-4 max-w-lg mx-auto">
+            
+            <!-- Success Icon -->
+            <div class="flex-1 flex flex-col items-center justify-center text-center">
+                <div class="w-24 h-24 bg-success rounded-full flex items-center justify-center mb-6 animate-bounce-once">
+                    <span class="text-5xl text-white">✓</span>
+                </div>
+                
+                <h1 class="text-2xl font-bold text-gray-800 mb-2">ĐÃ NHẬN YÊU CẦU</h1>
+                
+                <div class="bg-gray-100 rounded-xl p-4 my-4 w-full">
+                    <p class="text-gray-600 mb-1">Mã của bạn:</p>
+                    <p id="confirm-request-id" class="text-4xl font-bold text-primary">#----</p>
+                    <p class="text-sm text-gray-500 mt-2">Giữ mã này để theo dõi</p>
+                </div>
+                
+                <!-- Request Summary -->
+                <div class="bg-white rounded-xl p-4 w-full text-left shadow-sm">
+                    <h3 class="font-semibold text-gray-700 mb-2">Thông tin đã gửi:</h3>
+                    <div class="space-y-1 text-sm">
+                        <p><span class="text-gray-500">📍 Vị trí:</span> <span id="confirm-location">--</span></p>
+                        <p><span class="text-gray-500">👥 Số người:</span> <span id="confirm-people">--</span></p>
+                        <p><span class="text-gray-500">🚨 Mức độ:</span> <span id="confirm-urgency">--</span></p>
+                        <p><span class="text-gray-500">🕐 Thời gian:</span> <span id="confirm-time">--</span></p>
+                    </div>
+                </div>
+                
+                <!-- Waiting Status -->
+                <div class="mt-6 p-4 bg-blue-50 rounded-xl w-full">
+                    <div class="flex items-center justify-center">
+                        <div class="spinner mr-3"></div>
+                        <span class="text-primary">Đang chờ phản hồi từ trung tâm...</span>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="space-y-3 pb-4">
+                <button 
+                    onclick="showScreen('main')" 
+                    class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 rounded-xl transition-all"
+                >
+                    ← Gửi yêu cầu mới
+                </button>
+            </div>
+            
+        </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- SCREEN 3: RESPONSE                                           -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="screen-response" class="screen">
+        <div class="min-h-screen flex flex-col p-4 max-w-lg mx-auto">
+            
+            <div class="flex-1 flex flex-col">
+                
+                <!-- Header -->
+                <div class="text-center py-4">
+                    <span class="text-5xl">📢</span>
+                    <h1 class="text-2xl font-bold text-gray-800 mt-2">THÔNG BÁO CỨU HỘ</h1>
+                    <p class="text-sm text-gray-500">Mã: <span id="response-request-id">#----</span></p>
+                </div>
+                
+                <!-- Response Content -->
+                <div class="flex-1">
+                    
+                    <!-- ETA Card -->
+                    <div id="response-eta-card" class="bg-success text-white rounded-2xl p-6 mb-4 shadow-lg">
+                        <div class="text-center">
+                            <p class="text-lg opacity-90">Đội cứu hộ sẽ đến trong</p>
+                            <p class="text-5xl font-bold my-2" id="response-eta">~90</p>
+                            <p class="text-xl">phút</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-white/30 flex justify-around text-center">
+                            <div>
+                                <p class="text-sm opacity-80">Phương tiện</p>
+                                <p class="font-semibold" id="response-vehicle">🚤 Xuồng</p>
+                            </div>
+                            <div>
+                                <p class="text-sm opacity-80">Hướng đến</p>
+                                <p class="font-semibold" id="response-direction">Từ phía Đông</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Instructions -->
+                    <div class="bg-warning/10 rounded-2xl p-4 mb-4">
+                        <h3 class="font-bold text-warning flex items-center mb-3">
+                            <span class="text-xl mr-2">⚠️</span> HƯỚNG DẪN
+                        </h3>
+                        <ul id="response-instructions" class="space-y-2 text-gray-700">
+                            <li class="flex items-start">
+                                <span class="mr-2">•</span>
+                                <span>Di chuyển lên vị trí cao nhất có thể</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="mr-2">•</span>
+                                <span>Chuẩn bị áo phao nếu có</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="mr-2">•</span>
+                                <span>Giữ điện thoại còn pin</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Status Message -->
+                    <div id="response-status" class="bg-blue-50 rounded-xl p-4 text-center">
+                        <p class="text-primary" id="response-message">Đội đang trên đường đến</p>
+                    </div>
+                    
+                </div>
+                
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="space-y-3 pb-4">
+                <button 
+                    onclick="confirmReceived()" 
+                    class="w-full bg-success hover:bg-green-700 text-white font-bold py-4 rounded-xl transition-all"
+                >
+                    ✓ ĐÃ HIỂU
+                </button>
+                <button 
+                    onclick="requestMoreHelp()" 
+                    class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 rounded-xl transition-all"
+                >
+                    Cần hỗ trợ thêm
+                </button>
+            </div>
+            
+        </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- OFFLINE NOTICE                                               -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="offline-notice" class="fixed top-0 left-0 right-0 bg-warning text-white text-center py-2 text-sm transform -translate-y-full transition-transform z-50">
+        ⚠️ Không có mạng - Yêu cầu sẽ được gửi khi có kết nối
+    </div>
+    
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- LOADING OVERLAY                                              -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl p-8 text-center">
+            <div class="spinner-large mx-auto mb-4"></div>
+            <p class="text-gray-700 font-semibold">Đang gửi yêu cầu...</p>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="js/i18n.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/gps.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/screens.js"></script>
+    <script src="js/form.js"></script>
+    <script src="js/app.js"></script>
+    
+    <!-- Register Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('SW registered:', reg.scope))
+                    .catch(err => console.log('SW registration failed:', err));
+            });
+        }
+    </script>
+    
+</body>
+</html>

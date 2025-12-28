@@ -1,0 +1,218 @@
+// ═══════════════════════════════════════════════════════════════
+//                    DRECS - Prisma Schema
+// ═══════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// RESCUE POINTS - Điểm cần cứu hộ
+// ─────────────────────────────────────────────────────────────────
+
+model RescuePoint {
+  id            String   @id @default(uuid())
+  fingerprint   String   @unique // Chống trùng lặp
+  
+  // Location
+  lat           Float
+  lng           Float
+  
+  // Request details
+  people        Int      @default(1)
+  urgency       Int      @default(3) // 1=low, 2=medium, 3=high
+  injured       Boolean  @default(false)
+  waterLevel    String?  @map("water_level") // <0.5m, 0.5-1m, 1-2m, >2m
+  foodAvailable Boolean  @default(true) @map("food_available")
+  phone         String?
+  
+  // Status & Priority
+  status        RescueStatus @default(PENDING)
+  priorityScore Int          @default(0) @map("priority_score")
+  
+  // Source
+  sourceDrone   String?  @map("source_drone")
+  isPanic       Boolean  @default(false) @map("is_panic")
+  
+  // Timestamps
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  missions      Mission[]
+  notifications Notification[]
+  
+  @@map("rescue_points")
+  @@index([status])
+  @@index([priorityScore])
+  @@index([createdAt])
+}
+
+enum RescueStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  RESCUED
+  UNREACHABLE
+}
+
+// ─────────────────────────────────────────────────────────────────
+// TEAMS - Đội cứu hộ
+// ─────────────────────────────────────────────────────────────────
+
+model Team {
+  id        String     @id @default(uuid())
+  name      String
+  type      TeamType
+  capacity  Int        @default(5) // Số người có thể chở
+  
+  // Location
+  lat       Float
+  lng       Float
+  
+  // Status
+  status    TeamStatus @default(AVAILABLE)
+  
+  // Contact
+  phone     String?
+  leader    String?
+  
+  // Timestamps
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  
+  // Relations
+  missions  Mission[]
+  
+  @@map("teams")
+  @@index([status])
+  @@index([type])
+}
+
+enum TeamType {
+  BOAT
+  HELICOPTER
+  FOOT
+  TRUCK
+}
+
+enum TeamStatus {
+  AVAILABLE
+  BUSY
+  OFFLINE
+}
+
+// ─────────────────────────────────────────────────────────────────
+// MISSIONS - Nhiệm vụ cứu hộ
+// ─────────────────────────────────────────────────────────────────
+
+model Mission {
+  id            String        @id @default(uuid())
+  
+  // Relations
+  rescuePointId String        @map("rescue_point_id")
+  rescuePoint   RescuePoint   @relation(fields: [rescuePointId], references: [id])
+  teamId        String        @map("team_id")
+  team          Team          @relation(fields: [teamId], references: [id])
+  
+  // Details
+  etaMinutes    Int?          @map("eta_minutes")
+  status        MissionStatus @default(ASSIGNED)
+  notes         String?
+  
+  // Timestamps
+  startedAt     DateTime?     @map("started_at")
+  completedAt   DateTime?     @map("completed_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  
+  @@map("missions")
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum MissionStatus {
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// ─────────────────────────────────────────────────────────────────
+// DRONES - Drone status
+// ─────────────────────────────────────────────────────────────────
+
+model Drone {
+  id              String      @id // VD: D01, D02...
+  name            String?
+  
+  // Location
+  lat             Float?
+  lng             Float?
+  altitude        Int?
+  
+  // Status
+  batteryPercent  Int?        @map("battery_percent")
+  signalStrength  String?     @map("signal_strength") // strong, medium, weak
+  connectedUsers  Int         @default(0) @map("connected_users")
+  queueSize       Int         @default(0) @map("queue_size")
+  status          DroneStatus @default(OFFLINE)
+  
+  // Timestamps
+  lastHeartbeat   DateTime?   @map("last_heartbeat")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  
+  @@map("drones")
+  @@index([status])
+}
+
+enum DroneStatus {
+  ACTIVE
+  IDLE
+  RETURNING
+  OFFLINE
+}
+
+// ─────────────────────────────────────────────────────────────────
+// NOTIFICATIONS - Thông báo cho người dân
+// ─────────────────────────────────────────────────────────────────
+
+model Notification {
+  id            String           @id @default(uuid())
+  
+  // Relation
+  rescuePointId String           @map("rescue_point_id")
+  rescuePoint   RescuePoint      @relation(fields: [rescuePointId], references: [id])
+  
+  // Content
+  type          NotificationType
+  message       String
+  etaMinutes    Int?             @map("eta_minutes")
+  teamType      String?          @map("team_type")
+  direction     String?
+  instructions  Json?            // Array of strings
+  
+  // Status
+  readAt        DateTime?        @map("read_at")
+  
+  // Timestamps
+  createdAt     DateTime         @default(now()) @map("created_at")
+  
+  @@map("notifications")
+  @@index([rescuePointId])
+  @@index([createdAt])
+}
+
+enum NotificationType {
+  ACK         // Xác nhận đã nhận
+  ETA         // Thông báo thời gian đến
+  INSTRUCTION // Hướng dẫn
+  STATUS      // Cập nhật trạng thái
+  COMPLETED   // Hoàn thành cứu hộ
+}
