@@ -18,6 +18,8 @@ import { missionsRouter } from './routes/missions.js';
 import { dronesRouter } from './routes/drones.js';
 import { notificationsRouter } from './routes/notifications.js';
 import { healthRouter } from './routes/health.js';
+import { loraRouter } from './routes/lora.js';
+import { gatewaysRouter } from './routes/gateways.js';
 
 const app: Express = express();
 
@@ -35,7 +37,7 @@ app.use(cors({
   origin: corsOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Drone-Key']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Drone-Key', 'X-Source', 'X-Gateway-Key']
 }));
 
 // ─────────────────────────────────────────────────────────────────
@@ -71,6 +73,10 @@ app.use('/api/rescue-request', rescuePointsRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/acknowledge', notificationsRouter);
 
+// LoRa Gateway routes (v2.0)
+app.use('/api', loraRouter);           // POST /api/rescues/lora
+app.use('/api/gateways', gatewaysRouter);  // GET/POST /api/gateways/*
+
 // ─────────────────────────────────────────────────────────────────
 // ROOT & 404
 // ─────────────────────────────────────────────────────────────────
@@ -78,7 +84,7 @@ app.use('/api/acknowledge', notificationsRouter);
 app.get('/', (req: Request, res: Response) => {
   res.json({
     name: 'DRECS API Backend',
-    version: '1.0.0',
+    version: '2.0.0',
     status: 'running',
     docs: '/api/health',
     endpoints: {
@@ -86,7 +92,9 @@ app.get('/', (req: Request, res: Response) => {
       teams: '/api/v1/teams',
       missions: '/api/v1/missions',
       drones: '/api/v1/drones',
-      notifications: '/api/v1/notifications'
+      notifications: '/api/v1/notifications',
+      gateways: '/api/gateways',
+      loraRescue: '/api/rescues/lora'
     }
   });
 });

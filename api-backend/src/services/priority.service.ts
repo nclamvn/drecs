@@ -4,7 +4,7 @@
 
 import { RescuePoint, Team } from '@prisma/client';
 import { calculateDistance } from '../utils/helpers.js';
-import prisma from '../config/database.js';
+import prisma, { isDbAvailable } from '../config/database.js';
 
 /**
  * Water level scores
@@ -75,26 +75,31 @@ export async function findNearestTeam(
   lat: number,
   lng: number
 ): Promise<{ team: Team; distance: number } | null> {
+  // Return null in mock mode
+  if (!isDbAvailable()) {
+    return null;
+  }
+
   const teams = await prisma.team.findMany({
     where: {
       status: 'AVAILABLE'
     }
   });
-  
+
   if (teams.length === 0) {
     return null;
   }
-  
+
   let nearest: { team: Team; distance: number } | null = null;
-  
+
   for (const team of teams) {
     const distance = calculateDistance(lat, lng, team.lat, team.lng);
-    
+
     if (!nearest || distance < nearest.distance) {
       nearest = { team, distance };
     }
   }
-  
+
   return nearest;
 }
 

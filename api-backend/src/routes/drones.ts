@@ -4,10 +4,11 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import prisma from '../config/database.js';
+import prisma, { isDbAvailable } from '../config/database.js';
 import { validateBody } from '../middlewares/validate.js';
 import { AppError } from '../middlewares/error-handler.js';
 import { emitDroneStatus } from '../services/realtime.service.js';
+import { mockDrones, mockStats } from '../services/mock.service.js';
 
 const router = Router();
 
@@ -99,28 +100,40 @@ router.post('/heartbeat', validateBody(heartbeatSchema), async (
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { status } = req.query;
-    
+
+    // MOCK MODE
+    if (!isDbAvailable()) {
+      let filtered = [...mockDrones];
+      if (status) filtered = filtered.filter(d => d.status === status);
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      const data = filtered.map(d => ({
+        ...d,
+        isHealthy: d.lastHeartbeat && d.lastHeartbeat > fiveMinutesAgo
+      }));
+      return res.json({ success: true, data, mode: 'mock' });
+    }
+
+    // DB MODE
     const where: any = {};
     if (status) where.status = status;
-    
+
     const drones = await prisma.drone.findMany({
       where,
       orderBy: { id: 'asc' }
     });
-    
-    // Mark drones as offline if no heartbeat in 5 minutes
+
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    
+
     const dronesWithHealth = drones.map(drone => ({
       ...drone,
       isHealthy: drone.lastHeartbeat && drone.lastHeartbeat > fiveMinutesAgo
     }));
-    
+
     res.json({
       success: true,
       data: dronesWithHealth
     });
-    
+
   } catch (error) {
     next(error);
   }
@@ -132,6 +145,30 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
 router.get('/stats', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // MOCK MODE
+    if (!isDbAvailable()) {
+      const drones = mockDrones;
+      return res.json({
+        success: true,
+        data: {
+          total: drones.length,
+          byStatus: {
+            active: drones.filter(d => d.status === 'ACTIVE').length,
+            idle: drones.filter(d => d.status === 'IDLE').length,
+            returning: drones.filter(d => d.status === 'RETURNING').length,
+            offline: drones.filter(d => d.status === 'OFFLINE').length
+          },
+          aggregates: {
+            avgBattery: Math.round(drones.reduce((s, d) => s + (d.batteryPercent || 0), 0) / drones.length),
+            totalConnectedUsers: drones.reduce((s, d) => s + d.connectedUsers, 0),
+            totalQueueSize: drones.reduce((s, d) => s + d.queueSize, 0)
+          }
+        },
+        mode: 'mock'
+      });
+    }
+
+    // DB MODE
     const [
       total,
       active,
@@ -145,8 +182,7 @@ router.get('/stats', async (req: Request, res: Response, next: NextFunction) => 
       prisma.drone.count({ where: { status: 'RETURNING' } }),
       prisma.drone.count({ where: { status: 'OFFLINE' } })
     ]);
-    
-    // Get aggregates
+
     const aggregates = await prisma.drone.aggregate({
       _avg: {
         batteryPercent: true,
@@ -158,7 +194,7 @@ router.get('/stats', async (req: Request, res: Response, next: NextFunction) => 
         queueSize: true
       }
     });
-    
+
     res.json({
       success: true,
       data: {
@@ -176,7 +212,7 @@ router.get('/stats', async (req: Request, res: Response, next: NextFunction) => 
         }
       }
     });
-    
+
   } catch (error) {
     next(error);
   }

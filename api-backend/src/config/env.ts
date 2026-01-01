@@ -22,6 +22,7 @@ export const env = {
   
   // API Keys
   DRONE_API_KEY: process.env.DRONE_API_KEY || 'drone-api-key-dev',
+  LORA_GATEWAY_API_KEY: process.env.LORA_GATEWAY_API_KEY || 'lora-gateway-api-key-dev',
   
   // CORS
   CORS_ORIGINS: process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:8000',

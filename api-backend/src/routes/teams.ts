@@ -4,11 +4,12 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import prisma from '../config/database.js';
+import prisma, { isDbAvailable } from '../config/database.js';
 import { validateBody } from '../middlewares/validate.js';
 import { AppError } from '../middlewares/error-handler.js';
 import { emitTeamMoved } from '../services/realtime.service.js';
 import { calculateDistance } from '../utils/helpers.js';
+import { mockTeams } from '../services/mock.service.js';
 
 const router = Router();
 
@@ -38,11 +39,20 @@ const updateTeamSchema = z.object({
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { status, type } = req.query;
-    
+
+    // MOCK MODE
+    if (!isDbAvailable()) {
+      let filtered = [...mockTeams];
+      if (status) filtered = filtered.filter(t => t.status === status);
+      if (type) filtered = filtered.filter(t => t.type === type);
+      return res.json({ success: true, data: filtered, mode: 'mock' });
+    }
+
+    // DB MODE
     const where: any = {};
     if (status) where.status = status;
     if (type) where.type = type;
-    
+
     const teams = await prisma.team.findMany({
       where,
       orderBy: { name: 'asc' },
@@ -57,12 +67,12 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
         }
       }
     });
-    
+
     res.json({
       success: true,
       data: teams
     });
-    
+
   } catch (error) {
     next(error);
   }

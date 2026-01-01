@@ -155,7 +155,7 @@ export function RescueList({ limit, showFilters = true }: RescueListProps) {
           <select
             value={filter.sortOrder}
             onChange={(e) => setFilter({ sortOrder: e.target.value as 'asc' | 'desc' })}
-            className="select w-32"
+            className="select w-36"
           >
             <option value="desc">Cao → Thấp</option>
             <option value="asc">Thấp → Cao</option>

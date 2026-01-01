@@ -37,15 +37,17 @@ model RescuePoint {
   
   // Source
   sourceDrone   String?  @map("source_drone")
+  sourceChannel String   @default("4g") @map("source_channel") // '4g' | 'lora_fixed' | 'lora_mobile' | 'mesh'
   isPanic       Boolean  @default(false) @map("is_panic")
-  
+
   // Timestamps
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
-  
+
   // Relations
   missions      Mission[]
   notifications Notification[]
+  sources       RescueSource[]
   
   @@map("rescue_points")
   @@index([status])
@@ -215,4 +217,61 @@ enum NotificationType {
   INSTRUCTION // Hướng dẫn
   STATUS      // Cập nhật trạng thái
   COMPLETED   // Hoàn thành cứu hộ
+}
+
+// ─────────────────────────────────────────────────────────────────
+// RESCUE SOURCES - Tracking multi-channel rescue requests
+// ─────────────────────────────────────────────────────────────────
+
+model RescueSource {
+  id            String      @id @default(uuid())
+
+  // Relation
+  rescuePointId String      @map("rescue_point_id")
+  rescuePoint   RescuePoint @relation(fields: [rescuePointId], references: [id])
+
+  // Source info
+  channel       String      // '4g' | 'lora_fixed' | 'lora_mobile' | 'mesh'
+  receivedAt    DateTime    @default(now()) @map("received_at")
+
+  @@map("rescue_sources")
+  @@index([rescuePointId])
+  @@index([channel])
+}
+
+// ─────────────────────────────────────────────────────────────────
+// GATEWAYS - LoRa Gateway status
+// ─────────────────────────────────────────────────────────────────
+
+model Gateway {
+  id            String      @id @default(uuid())
+  gatewayId     String      @unique @map("gateway_id") // VD: GW-FIXED-001
+
+  // Type
+  type          GatewayType @default(FIXED)
+  name          String?
+
+  // Location (for mobile gateways)
+  lat           Float?
+  lng           Float?
+
+  // Status
+  battery       Int?        // 0-100% (mobile only)
+  signal4g      Int?        @map("signal_4g") // 0-5
+  packetsToday  Int         @default(0) @map("packets_today")
+  devicesSeen   Int         @default(0) @map("devices_seen")
+
+  // Timestamps
+  lastSeen      DateTime    @default(now()) @map("last_seen")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@map("gateways")
+  @@index([type])
+  @@index([lastSeen])
+}
+
+enum GatewayType {
+  FIXED
+  MOBILE
 }
