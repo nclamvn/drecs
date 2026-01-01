@@ -1,40 +1,61 @@
 # HANDOVER: DRECS PROJECT v2.0
 
-> **Ngày cập nhật:** 01/01/2026
-> **Phiên bản:** 2.0 (Multi-Link Communication)
+> **Ngay cap nhat:** 01/01/2026
+> **Phien ban:** 2.0 (Multi-Link Communication + Mock Mode)
 > **Repo:** https://github.com/nclamvn/drecs
 
 ---
 
-## TRẠNG THÁI TỔNG QUAN
+## TRANG THAI TONG QUAN
 
 | Module | Status | Progress |
 |--------|--------|----------|
-| M1: rescue-portal | HOÀN THÀNH | 100% |
+| M1: rescue-portal | HOAN THANH | 100% |
 | M2: drone-edge | CONTRACT READY | 0% |
-| M3: api-backend | HOÀN THÀNH (cần update) | 100% |
-| M4: command-dashboard | HOÀN THÀNH | 100% |
+| M3: api-backend | **HOAN THANH + MOCK MODE** | 100% |
+| M4: command-dashboard | **HOAN THANH + RESPONSIVE** | 100% |
 | M5: lora-gateway-fixed | CONTRACT READY | 0% |
 | M6: lora-gateway-mobile | CONTRACT READY | 0% |
 
-**Tổng tiến độ: 50% (3/6 modules)**
+**Tong tien do: 67% (4/6 modules)**
 
 ---
 
-## KIẾN TRÚC v2.0 - MULTI-LINK COMMUNICATION
+## TINH NANG MOI - SESSION NAY
+
+### 1. MOCK MODE (Quan trong!)
+- **Tat ca features hoat dong KE CA KHI KHONG CO DATABASE**
+- Mock data tu dong khi DB unavailable
+- Response tra ve `"mode": "mock"` de biet dang dung mock
+- Auto-reconnect khi DB quay lai (30s interval)
+
+### 2. M3 Backend Update (HOAN THANH)
+- LoRa ingestion endpoint: `POST /api/rescues/lora`
+- Gateway management: `GET/POST /api/gateways`
+- Multi-source tracking (RescueSource model)
+- Mock service voi 4 rescue points, 5 teams, 4 drones, 3 gateways
+
+### 3. UI Fixes
+- Responsive layout tren Settings page
+- Dropdown width fix ("Cao -> Thap")
+- CORS ho tro nhieu ports
+
+---
+
+## KIEN TRUC v2.0 - MULTI-LINK COMMUNICATION
 
 ```
-                          VÙNG LŨ (Disaster Zone)
+                          VUNG LU (Disaster Zone)
 
    User ---WiFi---> DRONE (Edge Node)
                          |
                          |---(1) LoRaWAN ---> Gateway Fixed (HQ)
                          |                          |
-                         |---(2) LoRaWAN ---> Gateway Mobile (Xe cứu hộ)
+                         |---(2) LoRaWAN ---> Gateway Mobile (Xe cuu ho)
                          |                          |
                          |---(3) 4G/LTE ----------> Internet
                          |                          |
-                         |---(4) Mesh -------> Drone khác ---> (1,2,3)
+                         |---(4) Mesh -------> Drone khac ---> (1,2,3)
                                                     |
                                                +---------+
                                                |   HQ    |
@@ -43,205 +64,146 @@
                                                +---------+
 ```
 
-### 4 Kênh truyền thông:
-
-| # | Kênh | Priority | Data | Range |
-|---|------|----------|------|-------|
-| 1 | LoRaWAN -> Gateway Fixed | Primary | 31 bytes | 2-15km |
-| 2 | LoRaWAN -> Gateway Mobile | Backup | 31 bytes | 2-15km |
-| 3 | 4G/LTE | Full Sync | Unlimited | BTS |
-| 4 | Drone Mesh | Last Resort | 31 bytes | 1-5km |
-
 ---
 
-## ĐÃ HOÀN THÀNH
+## CACH CHAY HE THONG
 
-### M1: Rescue Portal (PWA)
-- Captive Portal cho người dân
-- Panic Button (1-tap emergency)
-- Form thu thập thông tin
-- GPS auto-detect
-- Offline mode với Service Worker
-
-### M3: API Backend
-- Node.js + Express + TypeScript
-- PostgreSQL + Prisma ORM
-- REST API đầy đủ endpoints
-- WebSocket realtime
-- Priority algorithm
-- Fingerprint deduplication
-
-### M4: Command Dashboard
-- React + TypeScript + Vite
-- Interactive map với Leaflet
-- KPI Cards
-- Rescue list với filters
-- Assign mission modal
-- Teams & Drones management
-
----
-
-## CONTRACTS ĐÃ TẠO (Sẵn sàng build)
-
-### contracts/CONTRACT_M2_DRONE_EDGE.md
-- Python software cho Raspberry Pi
-- Multi-link communication (LoRa + 4G + Mesh)
-- WiFi Hotspot + Captive Portal
-- Smart Failover Logic
-- **~830 lines of code**
-
-### contracts/CONTRACT_M3_BACKEND_UPDATE.md
-- LoRa ingestion endpoint
-- Multi-source deduplication
-- Gateway management API
-- **~410 lines of code**
-
-### contracts/CONTRACT_M5_LORA_GATEWAY_FIXED.md
-- ChirpStack setup (Docker)
-- MQTT -> Backend Bridge
-- Monitoring dashboard
-- **~22 hours work**
-
-### contracts/CONTRACT_M6_LORA_GATEWAY_MOBILE.md
-- Portable Raspberry Pi kit
-- Solar/Battery powered
-- 4G Backhaul
-- **~32 hours work**
-
----
-
-## CÁCH CHẠY HỆ THỐNG (v1.0)
-
-### Bước 1: Database
+### KHONG CAN DATABASE (Mock Mode)
 ```bash
-cd /Users/mac/AnhTrongMinh/api-backend
-docker-compose up -d
-```
-
-### Bước 2: Backend API (Port 3001)
-```bash
+# Terminal 1: Backend (Port 3002)
 cd /Users/mac/AnhTrongMinh/api-backend
 npm run dev
-```
 
-### Bước 3: Dashboard (Port 3005)
-```bash
+# Terminal 2: Dashboard (Port 3005)
 cd /Users/mac/AnhTrongMinh/command-dashboard
 npm run dev
-```
 
-### Bước 4: Rescue Portal (Port 8000)
-```bash
+# Terminal 3: Rescue Portal (Port 65235)
 cd /Users/mac/AnhTrongMinh/rescue-portal
-npx serve . -p 8000
+npx serve . -p 65235
+```
+
+### VOI DATABASE (Full Mode)
+```bash
+# Buoc 0: Start PostgreSQL
+cd /Users/mac/AnhTrongMinh/api-backend
+docker-compose up -d
+
+# Sau do chay Backend va Dashboard nhu tren
 ```
 
 ---
 
-## LINKS
+## PORTS HIEN TAI
 
-| Service | URL |
-|---------|-----|
-| Dashboard | http://localhost:3005 |
-| API Backend | http://localhost:3001 |
-| Rescue Portal | http://localhost:8000 |
-| PostgreSQL | localhost:5433 |
-| GitHub | https://github.com/nclamvn/drecs |
+| Service | Port | URL |
+|---------|------|-----|
+| API Backend | 3002 | http://localhost:3002 |
+| Command Dashboard | 3005 | http://localhost:3005 |
+| Rescue Portal | 65235 | http://localhost:65235 |
+| PostgreSQL | 5433 | localhost:5433 |
+
+**LUU Y:** Port 3000, 3001 da duoc su dung boi ung dung khac
 
 ---
 
-## CẤU TRÚC PROJECT
+## CAU TRUC PROJECT
 
 ```
 /Users/mac/AnhTrongMinh/
 ├── rescue-portal/              # M1: PWA (DONE)
-├── api-backend/                # M3: Backend (DONE, needs update)
-├── command-dashboard/          # M4: Dashboard (DONE)
-├── contracts/                  # Contracts for all modules
+├── api-backend/                # M3: Backend (DONE + MOCK MODE)
+│   ├── src/
+│   │   ├── services/
+│   │   │   ├── mock.service.ts    # NEW: Mock data
+│   │   │   ├── gateway.service.ts # NEW: Gateway management
+│   │   │   └── priority.service.ts
+│   │   ├── routes/
+│   │   │   ├── lora.ts            # NEW: LoRa ingestion
+│   │   │   ├── gateways.ts        # NEW: Gateway CRUD
+│   │   │   └── rescue-points.ts   # Updated with mock fallback
+│   │   ├── middlewares/
+│   │   │   └── loraAuth.ts        # NEW: LoRa authentication
+│   │   └── config/
+│   │       └── database.ts        # Updated: graceful DB failure
+│   └── .env                       # Updated CORS origins
+├── command-dashboard/          # M4: Dashboard (DONE + RESPONSIVE)
+│   └── src/pages/
+│       └── SettingsPage.tsx    # Fixed: responsive layout
+├── contracts/                  # Contracts for remaining modules
 │   ├── CONTRACT_M2_DRONE_EDGE.md
 │   ├── CONTRACT_M3_BACKEND_UPDATE.md
 │   ├── CONTRACT_M5_LORA_GATEWAY_FIXED.md
 │   └── CONTRACT_M6_LORA_GATEWAY_MOBILE.md
-├── drone-edge/                 # M2: (TO BE CREATED)
-├── lora-gateway-fixed/         # M5: (TO BE CREATED)
-├── lora-gateway-mobile/        # M6: (TO BE CREATED)
 ├── .gitignore
 └── HANDOVER.md
 ```
 
 ---
 
-## LƯU Ý QUAN TRỌNG
+## MOCK DATA CO SAN
 
-1. **PostgreSQL chạy trên port 5433** (không phải 5432)
-2. **Dashboard port: 3005**
-3. **API có Mock data** - 5 teams, 4 drones, 3 rescue points
-4. **Contracts đã được phê duyệt** - sẵn sàng build
+### Rescue Points (4)
+| ID | Urgency | Status | People |
+|----|---------|--------|--------|
+| rp-001 | 3 (Critical) | PENDING | 5 |
+| rp-002 | 2 (Medium) | ASSIGNED | 3 |
+| rp-003 | 3 (Critical) | IN_PROGRESS | 8 |
+| rp-004 | 1 (Low) | PENDING | 2 |
 
----
+### Teams (5)
+- Doi Ca no 1 (AVAILABLE)
+- Doi Ca no 2 (BUSY)
+- Doi Y te (AVAILABLE)
+- Doi Bo doi (AVAILABLE)
+- Doi Tinh nguyen (BUSY)
 
-## KHI TIẾP TỤC (CONTINUE)
+### Drones (4)
+- DRONE-001 (ACTIVE, 85%)
+- DRONE-002 (ACTIVE, 72%)
+- DRONE-003 (IDLE, 95%)
+- DRONE-004 (OFFLINE, 15%)
 
-### Option 1: Build M2 (Drone Edge)
-```
-Đọc: contracts/CONTRACT_M2_DRONE_EDGE.md
-Tạo: drone-edge/ với Python project
-Implement: WiFi, HTTP Server, Queue, Links
-```
-
-### Option 2: Update M3 (Backend)
-```
-Đọc: contracts/CONTRACT_M3_BACKEND_UPDATE.md
-Thêm: LoRa routes, Gateway service
-Update: Prisma schema
-```
-
-### Option 3: Build M5 (Gateway Fixed)
-```
-Đọc: contracts/CONTRACT_M5_LORA_GATEWAY_FIXED.md
-Setup: ChirpStack Docker
-Create: Bridge script
-```
-
-### Option 4: Build M6 (Gateway Mobile)
-```
-Đọc: contracts/CONTRACT_M6_LORA_GATEWAY_MOBILE.md
-Assemble: Hardware
-Install: Software
-```
+### Gateways (3)
+- GW-FIXED-001 (HQ, ONLINE)
+- GW-MOBILE-001 (Mobile, ONLINE)
+- GW-MOBILE-002 (Mobile, OFFLINE)
 
 ---
 
-## HARDWARE BOM (Bill of Materials)
+## API ENDPOINTS
 
-### Per Drone Unit: $210
-- Raspberry Pi 4 (4GB): $55
-- LoRa HAT: $40
-- 4G Module: $45
-- GPS Module: $15
-- WiFi Adapter: $10
-- Power Management: $25
-- Case + Cables: $20
+### Rescue Points
+```
+GET  /api/v1/rescue-points     # List all (mock or DB)
+POST /api/v1/rescue-points     # Create new
+GET  /api/v1/rescue-points/:id # Get one
+PUT  /api/v1/rescue-points/:id # Update
+```
 
-### Gateway Fixed: $300
-- RAK7268: $180
-- Antenna: $30
-- Mounting: $40
-- UPS: $50
+### LoRa Ingestion (NEW)
+```
+POST /api/rescues/lora
+Headers:
+  X-Gateway-Key: lora-gateway-api-key-change-in-production
+  X-Source: lora_fixed | lora_mobile
 
-### Gateway Mobile: $380
-- Raspberry Pi 4: $55
-- RAK2247: $100
-- SIM7600: $45
-- Solar + Battery: $70
-- Antenna + Case: $110
+Body: { lat, lng, people, urgency, injured, phone, ... }
+```
 
-### Total System (5 drones, 1 fixed, 2 mobile):
-- 5x Drone: $1,050
-- 1x Fixed Gateway: $300
-- 2x Mobile Gateway: $760
-- Spare parts: $200
-- **TOTAL: $2,310**
+### Gateways (NEW)
+```
+GET  /api/gateways             # List all
+POST /api/gateways             # Register new
+PUT  /api/gateways/:id/status  # Update status
+```
+
+### Teams & Drones
+```
+GET /api/v1/teams
+GET /api/v1/drones
+GET /api/v1/drones/stats
+```
 
 ---
 
@@ -256,19 +218,73 @@ PostgreSQL:
 
 JWT Secret: your-super-secret-jwt-key-change-in-production
 Drone API Key: drone-api-key-change-in-production
-LoRa Gateway Key: lora-gateway-api-key (NEW)
+LoRa Gateway Key: lora-gateway-api-key-change-in-production
 ```
+
+---
+
+## KHI TIEP TUC (NEXT STEPS)
+
+### Option 1: Build M2 (Drone Edge) - RECOMMENDED
+```
+Doc: contracts/CONTRACT_M2_DRONE_EDGE.md
+Tao: drone-edge/ voi Python project
+Implement: WiFi Hotspot, HTTP Server, LoRa Links, 4G Fallback
+Hardware: Raspberry Pi 4 + LoRa HAT + 4G Module
+```
+
+### Option 2: Build M5 (Gateway Fixed)
+```
+Doc: contracts/CONTRACT_M5_LORA_GATEWAY_FIXED.md
+Setup: ChirpStack Docker
+Hardware: RAK7268 Gateway
+```
+
+### Option 3: Build M6 (Gateway Mobile)
+```
+Doc: contracts/CONTRACT_M6_LORA_GATEWAY_MOBILE.md
+Hardware: Raspberry Pi + RAK2247 + Solar
+```
+
+### Option 4: Test Full System
+```
+1. Chay Backend + Dashboard (mock mode)
+2. Mo Dashboard: http://localhost:3005
+3. Test cac chuc nang: Map, Rescue List, Teams, Drones
+4. Kiem tra responsive tren cac man hinh
+```
+
+---
+
+## GIT COMMITS GAN DAY
+
+```
+e6845ac Fix responsive layout on Settings page
+adcf39c DRECS v2.0: Multi-link communication & Mock mode
+d7cbe44 Add HANDOVER.md for project continuity
+d609998 Initial commit: DRECS - Drone Relay Emergency Coordination System
+```
+
+---
+
+## LUU Y QUAN TRONG
+
+1. **Mock Mode mac dinh** - Khong can database de test
+2. **Port 3002** cho Backend (khong phai 3001)
+3. **Port 3005** cho Dashboard
+4. **PostgreSQL port 5433** (khong phai 5432)
+5. **curl dung --http1.1** neu gap loi exit code 52
 
 ---
 
 ## VIBECODE RULES
 
-Tuân thủ Blueprint (Contracts):
-- KHÔNG thay đổi kiến trúc
-- KHÔNG thêm features ngoài Contract
-- KHÔNG đổi tech stack
-- Gặp conflict -> BÁO CÁO
+Tuan thu Blueprint (Contracts):
+- KHONG thay doi kien truc
+- KHONG them features ngoai Contract
+- KHONG doi tech stack
+- Gap conflict -> BAO CAO
 
 ---
 
-**Sẵn sàng tiếp tục!**
+**San sang tiep tuc! Chi can noi "doc handover de tiep tuc"**
