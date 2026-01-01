@@ -30,7 +30,7 @@ export function SettingsPage() {
   const wsConnected = socket.isConnected();
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 w-full">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Cài đặt</h1>
         <p className="text-gray-500">Thông tin hệ thống và cấu hình</p>
